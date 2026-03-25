@@ -40,10 +40,17 @@ const [capturedImage, setCapturedImage] = useState(null);
       setStep(3);
     }
 
-    else if (step === 3) {
-      setImages(prev => ({ ...prev, right: img }));
-      startProcessing();
-    }
+   else if (step === 3) {
+
+  const finalImages = {
+    ...images,
+    right: img
+  };
+
+  setImages(finalImages);
+
+  startProcessing(finalImages);   // ⭐ pass correct data
+}
 
   }, 2000);
 
