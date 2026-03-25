@@ -31,9 +31,26 @@ const [capturedImage, setCapturedImage] = useState(null);
     setCapturedImage(null);  // ⭐ resume camera
 
     if (step === 1) {
-      setImages(prev => ({ ...prev, front: img }));
-      setStep(2);
-    }
+
+  const video = webcamRef.current.video;
+
+  const targetWidth = 640;   // ⭐ fixed width
+  const aspectRatio = video.videoHeight / video.videoWidth;
+  const targetHeight = targetWidth * aspectRatio;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+
+  const adjustedFront = canvas.toDataURL("image/jpeg", 0.95);
+
+  setImages(prev => ({ ...prev, front: adjustedFront }));
+  setStep(2);
+}
 
     else if (step === 2) {
       setImages(prev => ({ ...prev, left: img }));
