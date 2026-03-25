@@ -16,7 +16,8 @@ function Scan() {
   const [images, setImages] = useState({
     front: null,
     left: null,
-    right: null
+    right: null,
+    front1: null,
   });
 
   // ⭐ Capture Function
@@ -54,11 +55,15 @@ function Scan() {
         setImages(prev => ({ ...prev, left: img }));
         setStep(3);
       }
-
       else if (step === 3) {
+        setImages(prev => ({ ...prev, right: img }));
+        setStep(4);
+      }
+
+      else if (step === 4) {
         const finalImages = {
           ...images,
-          right: img
+          front2: img
         };
 
         setImages(finalImages);
@@ -98,6 +103,7 @@ function Scan() {
     if (step === 1) return "Look Straight";
     if (step === 2) return "Turn Face LEFT";
     if (step === 3) return "Turn Face RIGHT";
+    if (step === 4) return "Look straight again";
   };
 
   return (
