@@ -34,8 +34,13 @@ const [capturedImage, setCapturedImage] = useState(null);
 
   const video = webcamRef.current.video;
 
-  const targetWidth = 640;   // ⭐ fixed width
-  const aspectRatio = video.videoHeight / video.videoWidth;
+  if (!video || video.videoWidth === 0) {
+    console.log("Camera not ready yet");
+    return;   // ⭐ prevents stuck crash
+  }
+
+  const targetWidth = 640;
+  const aspectRatio = video.videoHeight / video.videoWidth || 0.75;
   const targetHeight = targetWidth * aspectRatio;
 
   const canvas = document.createElement("canvas");
@@ -43,12 +48,12 @@ const [capturedImage, setCapturedImage] = useState(null);
   canvas.height = targetHeight;
 
   const ctx = canvas.getContext("2d");
-
   ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
 
   const adjustedFront = canvas.toDataURL("image/jpeg", 0.95);
 
   setImages(prev => ({ ...prev, front: adjustedFront }));
+
   setStep(2);
 }
 
