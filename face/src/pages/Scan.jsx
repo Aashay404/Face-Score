@@ -123,7 +123,12 @@ const startProcessing = async () => {
    <Webcam
   ref={webcamRef}
   screenshotFormat="image/jpeg"
-  videoConstraints={{ facingMode: "user" }}
+  forceScreenshotSourceSize={true}
+  videoConstraints={{
+  facingMode: "user",
+  width: { ideal: 1280 },
+  height: { ideal: 720 }
+}}
   onUserMedia={() => {
     console.log("Camera Ready");
     setTimeout(() => {
