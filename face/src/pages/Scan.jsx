@@ -171,10 +171,15 @@ const styles = {
     color: "#00ff9c"
   },
   cameraBox: {
-    flex: 1,
-    position: "relative",
-    borderRadius: 15,
-    overflow: "hidden"
+    cameraBox: {
+  width: "100%",
+  maxWidth: 420,
+  aspectRatio: "3 / 4",   // ⭐ VERY IMPORTANT
+  margin: "auto",
+  position: "relative",
+  borderRadius: 15,
+  overflow: "hidden"
+}
   },
   camera: {
     width: "100%",
