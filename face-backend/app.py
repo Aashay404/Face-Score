@@ -10,15 +10,13 @@ from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
 from datetime import datetime
-from mediapipe.tasks.python.vision import FaceLandmarker, FaceLandmarkerOptions
-from mediapipe.tasks.python.core.base_options import BaseOptions
 
 app = Flask(__name__)
 CORS(app)
 
 load_dotenv()
 
-# ⭐ Mongo
+# ⭐ MongoDB
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client["faceAI"]
 collection = db["scans"]
@@ -31,25 +29,21 @@ cloudinary.config(
     api_secret=os.getenv("API_SECRET")
 )
 
+# ⭐ Mediapipe FaceMesh (DEPLOY SAFE)
+mp_face = mp.solutions.face_mesh
+face_mesh = mp_face.FaceMesh(
+    static_image_mode=True,
+    max_num_faces=1,
+    refine_landmarks=True
+)
+
 def upload_image(img):
+    if img is None:
+        return None
     _, buffer = cv2.imencode(".jpg", img)
     result = cloudinary.uploader.upload(buffer.tobytes())
     return result["secure_url"]
 
-# ⭐ Face Landmarker
-base_options = BaseOptions(model_asset_path="face_landmarker.task")
-
-options = FaceLandmarkerOptions(
-    base_options=base_options,
-    num_faces=1,
-    min_face_detection_confidence=0.3,
-    min_face_presence_confidence=0.3,
-    min_tracking_confidence=0.3
-)
-
-detector = FaceLandmarker.create_from_options(options)
-
-# ⭐ SAFE Decode
 def decode_image(base64_string):
     if base64_string is None:
         return None
@@ -60,7 +54,7 @@ def decode_image(base64_string):
     except:
         return None
 
-# ⭐ REAL SCORING
+# ⭐ REAL GEOMETRIC SCORING
 def calculate_scores(landmarks):
 
     pts = [(lm.x, lm.y) for lm in landmarks]
@@ -116,24 +110,17 @@ def analyze():
         front = cv2.resize(front, (640, 480))
         rgb = cv2.cvtColor(front, cv2.COLOR_BGR2RGB)
 
-        mp_image = mp.Image(
-            image_format=mp.ImageFormat.SRGB,
-            data=rgb
-        )
+        result = face_mesh.process(rgb)
 
-        result = detector.detect(mp_image)
-
-        if not result.face_landmarks:
+        if not result.multi_face_landmarks:
             return jsonify({"error": "No face detected"}), 400
 
-        landmarks = result.face_landmarks[0]
+        landmarks = result.multi_face_landmarks[0].landmark
         scores = calculate_scores(landmarks)
 
-        # ⭐ Upload only if exists
         front_url = upload_image(front)
-
-        left_url = upload_image(left) if left is not None else None
-        right_url = upload_image(right) if right is not None else None
+        left_url = upload_image(left)
+        right_url = upload_image(right)
 
         collection.insert_one({
             "front": front_url,
@@ -149,7 +136,6 @@ def analyze():
         print("🔥 BACKEND ERROR:", e)
         return jsonify({"error": "Backend crash"}), 500
 
-import os
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
