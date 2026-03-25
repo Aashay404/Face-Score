@@ -103,6 +103,7 @@ def analyze():
         front = decode_image(data.get("front"))
         left = decode_image(data.get("left"))
         right = decode_image(data.get("right"))
+        front1 = decode_image(data.get("front1"))
 
         if front is None:
             return jsonify({"error": "Front image missing"}), 400
@@ -121,11 +122,13 @@ def analyze():
         front_url = upload_image(front)
         left_url = upload_image(left)
         right_url = upload_image(right)
+        front1_url = upload_image(front1)
 
         collection.insert_one({
             "front": front_url,
             "left": left_url,
             "right": right_url,
+            "front1": front1_url,
             "scores": scores,
             "created_at": datetime.utcnow()
         })
