@@ -102,6 +102,7 @@ const startProcessing = async () => {
     <Webcam
       ref={webcamRef}
       screenshotFormat="image/jpeg"
+      mirrored={false}
       videoConstraints={{ facingMode: "user" }}
       style={styles.camera}
     />
