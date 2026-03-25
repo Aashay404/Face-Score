@@ -63,7 +63,7 @@ function Scan() {
       else if (step === 4) {
         const finalImages = {
           ...images,
-          front2: img
+          front1: img
         };
 
         setImages(finalImages);
