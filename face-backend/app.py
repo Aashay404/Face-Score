@@ -108,7 +108,12 @@ def analyze():
         if front is None:
             return jsonify({"error": "Front image missing"}), 400
 
-        front = cv2.resize(front, (640, 480))
+        h, w = front.shape[:2]
+
+        target_width = 640
+        target_height = int((target_width / w) * h)
+
+        front = cv2.resize(front, (target_width, target_height))
         rgb = cv2.cvtColor(front, cv2.COLOR_BGR2RGB)
 
         result = face_mesh.process(rgb)
