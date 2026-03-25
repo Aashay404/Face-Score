@@ -169,9 +169,9 @@ const styles = {
     left: "15%",
     right: "15%",
     bottom: "20%",
-    border: "3px solid #00ff9c",
+    border: "3px solid #6f00ff",
     borderRadius: 20,
-    boxShadow: "0 0 20px #00ff9c"
+    boxShadow: "0 0 20px #0080ff"
   },
 
   overlay: {
