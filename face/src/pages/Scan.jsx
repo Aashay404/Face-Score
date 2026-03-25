@@ -3,12 +3,13 @@ import Webcam from "react-webcam";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../config";
 
-
 function Scan() {
   const navigate = useNavigate();
-  const [cameraReady,setCameraReady] = useState(false);
+
   const webcamRef = useRef(null);
-const [capturedImage, setCapturedImage] = useState(null);
+
+  const [cameraReady, setCameraReady] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -18,89 +19,80 @@ const [capturedImage, setCapturedImage] = useState(null);
     right: null
   });
 
- const capture = () => {
+  // ⭐ Capture Function
+  const capture = () => {
+    if (!webcamRef.current) return;
 
-  const img = webcamRef.current.getScreenshot();
+    const video = webcamRef.current.video;
 
-  setCapturedImage(img);     // ⭐ freeze screen
-  setLoading(true);
+    if (!video || video.videoWidth === 0) return;
 
-  setTimeout(() => {
+    // ⭐ Capture REAL frame using canvas (no stretch)
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
-    setLoading(false);
-    setCapturedImage(null);  // ⭐ resume camera
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
 
-    if (step === 1) {
+    const img = canvas.toDataURL("image/jpeg", 0.95);
 
-  const video = webcamRef.current.video;
+    // ⭐ Freeze UI
+    setCapturedImage(img);
+    setLoading(true);
 
-  const canvas = document.createElement("canvas");
+    setTimeout(() => {
+      setCapturedImage(null);
+      setLoading(false);
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+      if (step === 1) {
+        setImages(prev => ({ ...prev, front: img }));
+        setStep(2);
+      }
 
-  const ctx = canvas.getContext("2d");
+      else if (step === 2) {
+        setImages(prev => ({ ...prev, left: img }));
+        setStep(3);
+      }
 
-  ctx.drawImage(video, 0, 0);
+      else if (step === 3) {
+        const finalImages = {
+          ...images,
+          right: img
+        };
 
-  const realFrame = canvas.toDataURL("image/jpeg", 1);
+        setImages(finalImages);
+        startProcessing(finalImages);
+      }
 
-  setImages(prev => ({ ...prev, front: realFrame }));
-  setStep(2);
-}
-
-    else if (step === 2) {
-      setImages(prev => ({ ...prev, left: img }));
-      setStep(3);
-    }
-
-   else if (step === 3) {
-
-  const finalImages = {
-    ...images,
-    right: img
+    }, 1500);
   };
 
-  setImages(finalImages);
+  // ⭐ API Call
+  const startProcessing = async (finalImages) => {
+    setLoading(true);
 
-  startProcessing(finalImages);   // ⭐ pass correct data
-}
+    try {
+      const response = await fetch(`${API_URL}/analyze-face`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(finalImages)
+      });
 
-  }, 2000);
+      const data = await response.json();
 
-};
+      setLoading(false);
+      navigate("/result", { state: data });
 
-const startProcessing = async () => {
-
-  setLoading(true);
-
-  try {
- 
-    const response = await fetch(`${API_URL}/analyze-face`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(images)
-    });
-
-    const data = await response.json();
-
-    setLoading(false);
-
-    // ⭐ Navigate always
-    navigate("/result", { state: data });
-
-  } catch (err) {
-    setLoading(false);
-
-    navigate("/result", {
-      state: { error: "Server error. Please try again." }
-    });
-  }
-
-};
-
+    } catch {
+      setLoading(false);
+      navigate("/result", {
+        state: { error: "Server error. Please try again." }
+      });
+    }
+  };
 
   const getInstruction = () => {
     if (step === 1) return "Look Straight";
@@ -112,55 +104,51 @@ const startProcessing = async () => {
     <div style={styles.container}>
 
       <h2 style={styles.title}>Face Scan</h2>
-
       <p style={styles.instruction}>{getInstruction()}</p>
 
       <div style={styles.cameraBox}>
 
-  {capturedImage ? (
-    <img src={capturedImage} style={styles.camera} />
-  ) : (
-   <Webcam
-  ref={webcamRef}
-  screenshotFormat="image/jpeg"
-  forceScreenshotSourceSize={true}
-  videoConstraints={{
-  facingMode: "user",
-  width: { ideal: 1280 },
-  height: { ideal: 720 }
-}}
-  onUserMedia={() => {
-    console.log("Camera Ready");
-    setTimeout(() => {
-      setCameraReady(true);   // ⭐ wait extra stabilization time
-    }, 1200); // ⭐ VERY IMPORTANT delay
-  }}
-  style={styles.camera}
-/>
-  )}
+        {capturedImage ? (
+          <img src={capturedImage} style={styles.camera} />
+        ) : (
+          <Webcam
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            forceScreenshotSourceSize={true}
+            videoConstraints={{
+              facingMode: "user",
+              width: 640,
+              height: 480
+            }}
+            onUserMedia={() => {
+              setTimeout(() => setCameraReady(true), 1000);
+            }}
+            style={styles.camera}
+          />
+        )}
 
-  <div style={styles.faceFrame}></div>
+        <div style={styles.faceFrame}></div>
 
-  {loading && (
-    <div style={styles.overlay}>
-      <div style={styles.loader}></div>
-      <p>Analyzing Facial Structure...</p>
-    </div>
-  )}
+        {loading && (
+          <div style={styles.overlay}>
+            <div style={styles.loader}></div>
+            <p>Analyzing Facial Structure...</p>
+          </div>
+        )}
 
-</div>
+      </div>
 
       {!loading && (
         <button
-  style={{
-    ...styles.captureBtn,
-    opacity: cameraReady ? 1 : 0.5
-  }}
-  disabled={!cameraReady}
-  onClick={capture}
->
-  Capture
-</button>
+          style={{
+            ...styles.captureBtn,
+            opacity: cameraReady ? 1 : 0.5
+          }}
+          disabled={!cameraReady}
+          onClick={capture}
+        >
+          Capture
+        </button>
       )}
 
     </div>
@@ -168,7 +156,6 @@ const startProcessing = async () => {
 }
 
 const styles = {
-
   container: {
     height: "100vh",
     background: "#111",
@@ -177,30 +164,23 @@ const styles = {
     display: "flex",
     flexDirection: "column"
   },
-
-  title: {
-    textAlign: "center"
-  },
-
+  title: { textAlign: "center" },
   instruction: {
     textAlign: "center",
     marginBottom: 8,
     color: "#00ff9c"
   },
-
   cameraBox: {
     flex: 1,
     position: "relative",
     borderRadius: 15,
     overflow: "hidden"
   },
-
   camera: {
     width: "100%",
     height: "100%",
     objectFit: "cover"
   },
-
   faceFrame: {
     position: "absolute",
     top: "20%",
@@ -211,20 +191,15 @@ const styles = {
     borderRadius: 20,
     boxShadow: "0 0 20px #0080ff"
   },
-
   overlay: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    inset: 0,
     background: "rgba(0,0,0,0.7)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center"
   },
-
   loader: {
     width: 60,
     height: 60,
@@ -234,7 +209,6 @@ const styles = {
     animation: "spin 1s linear infinite",
     marginBottom: 20
   },
-
   captureBtn: {
     marginTop: 10,
     padding: 18,
@@ -243,7 +217,6 @@ const styles = {
     borderRadius: 12,
     fontSize: 18
   }
-
 };
 
 export default Scan;
