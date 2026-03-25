@@ -31,9 +31,23 @@ const [capturedImage, setCapturedImage] = useState(null);
     setCapturedImage(null);  // ⭐ resume camera
 
     if (step === 1) {
-      setImages(prev => ({ ...prev, front: img }));
-      setStep(2);
-    }
+
+  const video = webcamRef.current.video;
+
+  const canvas = document.createElement("canvas");
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.drawImage(video, 0, 0);
+
+  const realFrame = canvas.toDataURL("image/jpeg", 1);
+
+  setImages(prev => ({ ...prev, front: realFrame }));
+  setStep(2);
+}
 
     else if (step === 2) {
       setImages(prev => ({ ...prev, left: img }));
