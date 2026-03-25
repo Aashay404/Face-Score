@@ -6,7 +6,7 @@ import { API_URL } from "../config";
 
 function Scan() {
   const navigate = useNavigate();
-
+  const [cameraReady,setCameraReady] = useState(false);
   const webcamRef = useRef(null);
 const [capturedImage, setCapturedImage] = useState(null);
   const [step, setStep] = useState(1);
@@ -106,13 +106,18 @@ const startProcessing = async () => {
   {capturedImage ? (
     <img src={capturedImage} style={styles.camera} />
   ) : (
-    <Webcam
-      ref={webcamRef}
-      screenshotFormat="image/jpeg"
-      mirrored={false}
-      videoConstraints={{ facingMode: "user" }}
-      style={styles.camera}
-    />
+   <Webcam
+  ref={webcamRef}
+  screenshotFormat="image/jpeg"
+  videoConstraints={{ facingMode: "user" }}
+  onUserMedia={() => {
+    console.log("Camera Ready");
+    setTimeout(() => {
+      setCameraReady(true);   // ⭐ wait extra stabilization time
+    }, 1200); // ⭐ VERY IMPORTANT delay
+  }}
+  style={styles.camera}
+/>
   )}
 
   <div style={styles.faceFrame}></div>
@@ -127,9 +132,16 @@ const startProcessing = async () => {
 </div>
 
       {!loading && (
-        <button style={styles.captureBtn} onClick={capture}>
-          Capture
-        </button>
+        <button
+  style={{
+    ...styles.captureBtn,
+    opacity: cameraReady ? 1 : 0.5
+  }}
+  disabled={!cameraReady}
+  onClick={capture}
+>
+  Capture
+</button>
       )}
 
     </div>
