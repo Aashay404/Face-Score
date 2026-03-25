@@ -45,25 +45,32 @@ function Scan() {
       setCapturedImage(null);
       setLoading(false);
 
-      if (step === 1) {
-        setImages(prev => ({ ...prev, front: img }));
-        setStep(2);
-      }
+     if (step === 1) {
+  setImages(prev => ({ ...prev, front: img }));
+  setStep(2);
+}
 
-      else if (step === 2) {
-        setImages(prev => ({ ...prev, left: img }));
-        setStep(3);
-      }
+else if (step === 2) {
+  setImages(prev => ({ ...prev, left: img }));
+  setStep(3);
+}
 
-      else if (step === 3) {
-        const finalImages = {
-          ...images,
-          right: img
-        };
+else if (step === 3) {
+  setImages(prev => ({ ...prev, right: img }));
+  setStep(4);
+}
 
-        setImages(finalImages);
-        startProcessing(finalImages);
-      }
+else if (step === 4) {
+
+  const finalImages = {
+    ...images,
+    front: img   // ⭐ overwrite front with final stable front
+  };
+
+  setImages(finalImages);
+
+  startProcessing(finalImages);
+}
 
     }, 1500);
   };
@@ -95,10 +102,11 @@ function Scan() {
   };
 
   const getInstruction = () => {
-    if (step === 1) return "Look Straight";
-    if (step === 2) return "Turn Face LEFT";
-    if (step === 3) return "Turn Face RIGHT";
-  };
+  if (step === 1) return "Look Straight";
+  if (step === 2) return "Turn Face LEFT";
+  if (step === 3) return "Turn Face RIGHT";
+  if (step === 4) return "Look Straight Again";
+};
 
   return (
     <div style={styles.container}>
